@@ -128,6 +128,28 @@ Set the sync-server URL the app ships with via `SERVER` when building.
 
 ---
 
+## Releasing new versions (and how your friend auto-updates)
+
+CI (`.github/workflows/release.yml`) builds the macOS `.dmg` and Windows `.exe` on
+GitHub's own runners and attaches them to a **GitHub Release**. The app ships with
+`electron-updater`, so anyone on an older version updates automatically on next
+launch — you never hand-deliver a build.
+
+To cut a release, bump the version and push a tag:
+
+```bash
+# set desktop/package.json "version" to e.g. 0.2.0, then:
+git commit -am "v0.2.0"
+git tag v0.2.0
+git push && git push --tags        # CI builds + publishes installers to Releases
+```
+
+Share the Release page's download links once, and every later version updates
+itself. (Windows auto-update works from an unsigned build; macOS auto-update needs
+the build signed with your Apple Developer ID.)
+
+---
+
 ## Playing with a friend
 
 The desktop app **carries its own sync server**, so no separate hosting is needed —
