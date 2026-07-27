@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+
+# local config / secrets
+.env
+*.local
+
+# build output
+dist/
+client/dist/
+desktop/resources/
+
+# vite / tooling caches
+.vite/
+*.timestamp-*.mjs
+
+# os / editor
+.DS_Store
+*.log

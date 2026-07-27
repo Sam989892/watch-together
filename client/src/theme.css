@@ -1,0 +1,111 @@
+/* Watch Together — design tokens (Claude Design System vocabulary).
+   This file is the source of truth Claude Design's /design-sync reads from. */
+
+:root {
+  --surface-0: #f7f6f2;
+  --surface-1: #f1efe8;
+  --surface-2: #ffffff;
+  --surface-3: #ffffff;
+
+  --text-primary: #26251f;
+  --text-secondary: #5f5e5a;
+  --text-muted: #888780;
+
+  --text-accent: #185fa5;
+  --bg-accent: #e6f1fb;
+  --border-accent: #85b7eb;
+
+  --text-success: #0f6e56;
+  --bg-success: #e1f5ee;
+  --fill-success: #1d9e75;
+  --border-success: #5dcaa5;
+
+  --text-warning: #854f0b;
+  --bg-warning: #faeeda;
+  --border-warning: #ef9f27;
+
+  --text-pro: #3c3489;
+  --bg-pro: #eeedfe;
+
+  --border: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.18);
+
+  --radius: 8px;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+
+  --shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+:root[data-mode="dark"] {
+  --surface-0: #1c1c20;
+  --surface-1: #26262b;
+  --surface-2: #303036;
+  --surface-3: #37373d;
+
+  --text-primary: #ededf0;
+  --text-secondary: #b6b6bd;
+  --text-muted: #85858d;
+
+  --text-accent: #85b7eb;
+  --bg-accent: #123a5c;
+  --border-accent: #185fa5;
+
+  --text-success: #5dcaa5;
+  --bg-success: #0f3d33;
+  --fill-success: #1d9e75;
+  --border-success: #0f6e56;
+
+  --text-warning: #efb44f;
+  --bg-warning: #4a340d;
+  --border-warning: #854f0b;
+
+  --text-pro: #cecbf6;
+  --bg-pro: #2b2760;
+
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.22);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--surface-0);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: 0.5px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-primary);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  transition: background 0.12s, transform 0.08s;
+}
+button:hover { background: var(--surface-1); }
+button:active { transform: scale(0.98); }
+button.primary { background: var(--text-accent); border-color: var(--text-accent); color: #fff; }
+
+input[type="text"], input[type="password"] {
+  font: inherit;
+  height: 36px;
+  padding: 0 10px;
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  outline: none;
+}
+input:focus { box-shadow: 0 0 0 2px var(--bg-accent); border-color: var(--border-accent); }
+
+input[type="range"] { accent-color: var(--text-accent); }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}

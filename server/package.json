@@ -1,0 +1,16 @@
+{
+  "name": "watch-together-server",
+  "version": "0.1.0",
+  "description": "WebSocket room relay for Watch Together (sync brain)",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
