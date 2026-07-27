@@ -3,7 +3,7 @@ import { AVATARS } from "../lib/room.js";
 import Tooltip from "../components/Tooltip.jsx";
 
 // Lobby: pick avatar + name, connect VLC, create or join a room.
-export default function Lobby({ me, setMe, onEnter, onTestVlc, onAutoSetup, vlcTest, vlcAuto, agentReady }) {
+export default function Lobby({ me, setMe, onEnter, onTestVlc, onAutoSetup, onOpenAudio, vlcTest, vlcAuto, agentReady }) {
   const [code, setCode] = useState("");
   const [server, setServer] = useState(""); // blank = host on this app's own server
   const [vlcPass, setVlcPass] = useState("");
@@ -79,6 +79,10 @@ export default function Lobby({ me, setMe, onEnter, onTestVlc, onAutoSetup, vlcT
 
         <VlcRow state={vlcState} pass={vlcPass} setPass={setVlcPass} onTest={testVlc}
           onAutoSetup={autoSetup} error={vlcError} disabled={!agentReady} />
+
+        <button onClick={onOpenAudio} style={{ width: "100%", marginBottom: 18, fontSize: 12, height: 30 }}>
+          🎧 Test mic &amp; choose audio devices
+        </button>
 
         <input type="text" placeholder="Friend's server address (leave blank to host)"
           value={server} onChange={(e) => setServer(e.target.value.trim())}

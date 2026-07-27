@@ -9,7 +9,7 @@ import FileMismatch from "../components/FileMismatch.jsx";
 
 // Main room. Shows the now-playing status panel, sync controls, participants,
 // and the chat column. Wires keyboard shortcuts to sync actions.
-export default function Room({ me, roomCode, roster, messages, fileCheck, vlc, micOn, onToggleMic, send }) {
+export default function Room({ me, roomCode, roster, messages, fileCheck, vlc, micOn, onToggleMic, onOpenAudio, send }) {
   const [showShortcuts, setShowShortcuts] = useState(false);
   // Playback state is whatever local VLC actually reports (via the agent).
   const { playing, time, duration } = vlc;
@@ -63,7 +63,7 @@ export default function Room({ me, roomCode, roster, messages, fileCheck, vlc, m
           />
 
           <Participants roster={roster} me={me} micOn={micOn} onToggleMic={onToggleMic}
-            onShortcuts={() => setShowShortcuts(true)} />
+            onOpenAudio={onOpenAudio} onShortcuts={() => setShowShortcuts(true)} />
         </div>
 
         <Chat messages={messages} onSend={(text) => send({ type: "chat", text })} />

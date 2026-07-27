@@ -3,6 +3,7 @@ import { connect } from "./lib/room.js";
 import { createVoice } from "./lib/voice.js";
 import Lobby from "./screens/Lobby.jsx";
 import Room from "./screens/Room.jsx";
+import AudioSettings from "./components/AudioSettings.jsx";
 
 // Top-level state machine: lobby -> room. Owns the connection to the local
 // agent (the agent, not the browser, talks to VLC + the sync server).
@@ -21,6 +22,8 @@ export default function App() {
   const [agentReady, setAgentReady] = useState(false);
   const [linkDown, setLinkDown] = useState(false); // sync-server link dropped, reconnecting
   const [micOn, setMicOn] = useState(false);
+  const [audio, setAudio] = useState({ inputId: "", outputId: "" }); // "" = system default
+  const [showAudio, setShowAudio] = useState(false);
   const conn = useRef(null);
   const youId = useRef(null);      // our member id on the sync server
   const voice = useRef(null);      // WebRTC voice controller
@@ -53,8 +56,13 @@ export default function App() {
     const peer = roster.find((m) => m.id && m.id !== youId.current);
     if (peer && !voice.current) {
       voice.current = createVoice({
+        inputId: audio.inputId,
         sendSignal: (payload) => conn.current?.send({ type: "voice", ...payload }),
-        onRemoteStream: (stream) => { if (audioEl.current) audioEl.current.srcObject = stream; },
+        onRemoteStream: (stream) => {
+          if (!audioEl.current) return;
+          audioEl.current.srcObject = stream;
+          if (audio.outputId && audioEl.current.setSinkId) audioEl.current.setSinkId(audio.outputId).catch(() => {});
+        },
         onError: (e) => console.warn("voice:", e?.message || e),
       });
       // One side initiates (stable rule: smaller id), so they don't both offer.
@@ -73,6 +81,13 @@ export default function App() {
       conn.current?.send({ type: "presence", micOn: next });
       return next;
     });
+  }
+
+  // Apply audio device choices — live to an ongoing call, and stored for the next.
+  function changeAudio(next) {
+    setAudio(next);
+    if (voice.current) voice.current.setInputDevice(next.inputId).catch(() => {});
+    if (audioEl.current?.setSinkId) audioEl.current.setSinkId(next.outputId || "").catch(() => {});
   }
 
   function testVlc(vlcPassword) {
@@ -94,10 +109,19 @@ export default function App() {
     });
   }
 
+  const audioModal = showAudio && (
+    <AudioSettings inputId={audio.inputId} outputId={audio.outputId}
+      onChange={changeAudio} onClose={() => setShowAudio(false)} />
+  );
+
   if (screen === "lobby") {
     return (
-      <Lobby me={me} setMe={setMe} onEnter={enterRoom} onTestVlc={testVlc}
-        onAutoSetup={autoSetupVlc} vlcTest={vlcTest} vlcAuto={vlcAuto} agentReady={agentReady} />
+      <>
+        <Lobby me={me} setMe={setMe} onEnter={enterRoom} onTestVlc={testVlc}
+          onAutoSetup={autoSetupVlc} onOpenAudio={() => setShowAudio(true)}
+          vlcTest={vlcTest} vlcAuto={vlcAuto} agentReady={agentReady} />
+        {audioModal}
+      </>
     );
   }
   return (
@@ -117,10 +141,12 @@ export default function App() {
         vlc={vlc}
         micOn={micOn}
         onToggleMic={toggleMic}
+        onOpenAudio={() => setShowAudio(true)}
         send={(obj) => conn.current?.send(obj)}
       />
       {/* Peer voice plays here (P2P WebRTC audio). */}
       <audio ref={audioEl} autoPlay />
+      {audioModal}
     </>
   );
 }

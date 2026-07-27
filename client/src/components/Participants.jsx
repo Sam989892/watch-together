@@ -1,7 +1,7 @@
 import Tooltip from "./Tooltip.jsx";
 
 // Participant avatars with mic status + mic/invite/shortcut controls.
-export default function Participants({ roster, me, micOn, onToggleMic, onShortcuts }) {
+export default function Participants({ roster, me, micOn, onToggleMic, onOpenAudio, onShortcuts }) {
   const people = roster.length ? roster : [{ name: me.name, avatar: me.avatar, micOn, self: true }];
 
   return (
@@ -30,6 +30,10 @@ export default function Participants({ roster, me, micOn, onToggleMic, onShortcu
         <Tooltip text="Mute or unmute your voice chat. (Shortcut: M)" align="right">
           <button aria-label="Toggle microphone" onClick={onToggleMic}
             style={{ width: 36, height: 36, padding: 0 }}>{micOn ? "🎙" : "🔇"}</button>
+        </Tooltip>
+        <Tooltip text="Test your mic and pick input/output devices." align="right">
+          <button aria-label="Audio settings" onClick={onOpenAudio}
+            style={{ width: 36, height: 36, padding: 0 }}>🎧</button>
         </Tooltip>
         <Tooltip text="Copy an invite link to add more people." align="right">
           <button aria-label="Invite" style={{ width: 36, height: 36, padding: 0 }}>＋</button>

@@ -9,16 +9,36 @@ const RTC_CONFIG = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
 };
 
-export function createVoice({ sendSignal, onRemoteStream, onError }) {
+export function createVoice({ sendSignal, onRemoteStream, onError, inputId = "" }) {
   let pc = null;
   let localStream = null;
   let peerId = null;
+  let deviceId = inputId;   // chosen mic ("" = system default)
+  let enabled = false;      // current mute state, preserved across device swaps
+
+  function micConstraints() {
+    return { audio: deviceId ? { deviceId: { exact: deviceId } } : true };
+  }
 
   async function ensureMic() {
     if (localStream) return localStream;
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    localStream.getAudioTracks().forEach((t) => (t.enabled = false)); // muted until you unmute
+    localStream = await navigator.mediaDevices.getUserMedia(micConstraints());
+    localStream.getAudioTracks().forEach((t) => (t.enabled = enabled)); // muted until you unmute
     return localStream;
+  }
+
+  // Switch the live mic without dropping the call: grab the new device and
+  // swap the outgoing track in place.
+  async function setInputDevice(id) {
+    deviceId = id || "";
+    if (!localStream) return;
+    const fresh = await navigator.mediaDevices.getUserMedia(micConstraints());
+    const track = fresh.getAudioTracks()[0];
+    track.enabled = enabled;
+    const sender = pc?.getSenders().find((s) => s.track && s.track.kind === "audio");
+    if (sender) await sender.replaceTrack(track);
+    localStream.getTracks().forEach((t) => t.stop());
+    localStream = fresh;
   }
 
   function newPeer(toId) {
@@ -68,6 +88,7 @@ export function createVoice({ sendSignal, onRemoteStream, onError }) {
   }
 
   function setMicEnabled(on) {
+    enabled = on;
     localStream?.getAudioTracks().forEach((t) => (t.enabled = on));
   }
 
@@ -79,5 +100,5 @@ export function createVoice({ sendSignal, onRemoteStream, onError }) {
     peerId = null;
   }
 
-  return { start, handleSignal, setMicEnabled, close, get peerId() { return peerId; } };
+  return { start, handleSignal, setMicEnabled, setInputDevice, close, get peerId() { return peerId; } };
 }
