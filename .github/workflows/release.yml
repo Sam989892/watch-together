@@ -13,9 +13,13 @@ permissions:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        # windows-2022, not windows-latest: electron-builder 25.x hangs building
+        # the NSIS installer on the Windows Server 2025 runner image.
+        os: [macos-latest, windows-2022]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30   # fail fast instead of burning the 6-hour max on a hang
     steps:
       - uses: actions/checkout@v4
 
