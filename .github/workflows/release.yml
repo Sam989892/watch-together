@@ -21,6 +21,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Windows Defender real-time scanning locks files mid-build and makes
+      # electron-builder hang for the whole job. Turn it off on the runner.
+      - name: Disable Defender real-time scanning (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Set-MpPreference -DisableRealtimeMonitoring $true
+        continue-on-error: true
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
