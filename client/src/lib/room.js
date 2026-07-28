@@ -2,7 +2,9 @@
 // The browser never talks to the sync server directly — it can't reach VLC
 // (no CORS, digest auth), so the local agent is the bridge for everything.
 
-export const AGENT_URL = import.meta.env.VITE_AGENT || "ws://localhost:8899";
+// Use 127.0.0.1, not "localhost": on Windows "localhost" can resolve to IPv6
+// (::1) while the agent binds IPv4, so the UI silently fails to connect.
+export const AGENT_URL = import.meta.env.VITE_AGENT || "ws://127.0.0.1:8899";
 export const AVATARS = ["🦊", "🐼", "🐸", "🐙", "🦉", "🐢", "🦝", "🐱"];
 
 export function fmtTime(t) {
@@ -19,6 +21,26 @@ export function parseTime(str) {
   const parts = String(str).trim().split(":").map(Number);
   if (parts.some(isNaN)) return null;
   return parts.reduce((acc, n) => acc * 60 + n, 0);
+}
+
+// Copy with a fallback for when the async clipboard API is blocked (common in
+// Electron / non-secure contexts).
+export async function copyText(text) {
+  // Electron: go through the main process (most reliable). See preload.cjs.
+  try { if (window.appClipboard) { await window.appClipboard.write(text); return true; } } catch {}
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch { return false; }
 }
 
 export function connect(onMessage) {

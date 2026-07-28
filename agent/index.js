@@ -15,16 +15,29 @@
 //   SERVER      ws(s) url of the sync server             (default ws://localhost:8787)
 //   VLC_PORT    default VLC HTTP port if the UI doesn't send one (default 8080)
 
+import { networkInterfaces } from "node:os";
 import { WebSocketServer, WebSocket } from "ws";
 import { VlcClient } from "./vlc.js";
 import { autoSetupVlc } from "./vlc-setup.js";
 
+// This machine's LAN IP (first non-internal IPv4), for a friend to join by.
+function lanIp() {
+  for (const addrs of Object.values(networkInterfaces())) {
+    for (const a of addrs || []) {
+      if (a.family === "IPv4" && !a.internal) return a.address;
+    }
+  }
+  return null;
+}
+
 const LOCAL_PORT = Number(process.env.LOCAL_PORT) || 8899;
-const SERVER = process.env.SERVER || "ws://localhost:8787";
+// 127.0.0.1, not "localhost": avoids the Windows IPv6/IPv4 mismatch where the
+// UI can't reach the agent because "localhost" resolves to ::1.
+const SERVER = process.env.SERVER || "ws://127.0.0.1:8787";
 const DEFAULT_VLC_PORT = Number(process.env.VLC_PORT) || 8080;
 
-const wss = new WebSocketServer({ port: LOCAL_PORT });
-console.log(`Watch Together agent listening for the UI on ws://localhost:${LOCAL_PORT}`);
+const wss = new WebSocketServer({ host: "127.0.0.1", port: LOCAL_PORT });
+console.log(`Watch Together agent listening for the UI on ws://127.0.0.1:${LOCAL_PORT}`);
 console.log(`Will relay to sync server at ${SERVER}`);
 
 // Turn whatever a user typed for a friend's server into a ws(s):// url.
@@ -96,6 +109,10 @@ wss.on("connection", (local) => {
           file: s ? { name: s.file, size, duration: Math.round(s.length) } : null,
         },
       };
+      // Tell the UI whether we're hosting and, if so, the address to hand a
+      // friend on the same network.
+      const hosting = !(msg.serverUrl && msg.serverUrl.trim());
+      sendLocal({ type: "net-info", hosting, hostIp: hosting ? lanIp() : null });
       connectUpstream(session);
       return;
     }

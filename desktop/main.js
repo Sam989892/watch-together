@@ -5,7 +5,7 @@
 //   sync server : ws://localhost:8787   (shared room relay)
 //   agent       : ws://localhost:8899   (this machine's VLC bridge + UI link)
 
-import { app, BrowserWindow, shell, session } from "electron";
+import { app, BrowserWindow, shell, session, ipcMain, clipboard } from "electron";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
 import electronUpdater from "electron-updater";
@@ -17,7 +17,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // By default the agent relays to the sync server running inside this same app,
 // so a solo/host machine needs nothing external. Override SERVER to join
 // someone else's server instead.
-process.env.SERVER = process.env.SERVER || "ws://localhost:8787";
+process.env.SERVER = process.env.SERVER || "ws://127.0.0.1:8787";
 
 // In dev the pieces live in sibling folders; once packaged, prepack.mjs copies
 // them under the app's resources (process.resourcesPath).
@@ -42,7 +42,7 @@ function createWindow() {
     minHeight: 560,
     title: "Watch Together",
     backgroundColor: "#0f0f12",
-    webPreferences: { contextIsolation: true },
+    webPreferences: { contextIsolation: true, preload: join(__dirname, "preload.cjs") },
   });
   // External links open in the real browser, not inside the app window.
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -52,6 +52,9 @@ function createWindow() {
   win.webContents.on("did-fail-load", (_e, code, desc) => console.error("UI failed to load:", code, desc));
   win.loadFile(CLIENT_INDEX);
 }
+
+// Reliable copy for the UI (see preload.cjs).
+ipcMain.handle("clipboard:write", (_e, text) => { clipboard.writeText(String(text)); return true; });
 
 app.whenReady().then(async () => {
   // Allow the mic (voice chat); deny other permission requests.

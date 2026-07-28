@@ -24,6 +24,7 @@ export default function App() {
   const [micOn, setMicOn] = useState(false);
   const [audio, setAudio] = useState({ inputId: "", outputId: "" }); // "" = system default
   const [showAudio, setShowAudio] = useState(false);
+  const [net, setNet] = useState({ hosting: false, hostIp: null }); // who's hosting + share address
   const conn = useRef(null);
   const youId = useRef(null);      // our member id on the sync server
   const voice = useRef(null);      // WebRTC voice controller
@@ -39,10 +40,25 @@ export default function App() {
       case "vlc-test-result": setVlcTest(msg); break;
       case "vlc-autosetup-result": setVlcAuto(msg); break;
       case "vlc-status": setVlc(msg); break;
+      case "net-info": setNet({ hosting: msg.hosting, hostIp: msg.hostIp }); break;
       case "voice": voice.current?.handleSignal(msg); break;
       case "link": setLinkDown(!msg.up); break;
       case "error": alert(msg.message); break;
     }
+  }
+
+  // Leave the room: drop the agent link (which ends our room membership), reset,
+  // and reconnect a fresh link for the lobby.
+  function leaveRoom() {
+    voice.current?.close();
+    voice.current = null;
+    conn.current?.close();
+    youId.current = null;
+    setRoster([]); setMessages([]); setFileCheck(null); setMicOn(false);
+    setNet({ hosting: false, hostIp: null });
+    conn.current = connect(handle);
+    conn.current.ready().then(() => setAgentReady(true));
+    setScreen("lobby");
   }
 
   useEffect(() => {
@@ -139,9 +155,11 @@ export default function App() {
         messages={messages}
         fileCheck={fileCheck}
         vlc={vlc}
+        net={net}
         micOn={micOn}
         onToggleMic={toggleMic}
         onOpenAudio={() => setShowAudio(true)}
+        onLeave={leaveRoom}
         send={(obj) => conn.current?.send(obj)}
       />
       {/* Peer voice plays here (P2P WebRTC audio). */}

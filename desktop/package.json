@@ -1,6 +1,6 @@
 {
   "name": "watch-together-desktop",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Watch Together as one desktop app (agent + UI in Electron)",
   "type": "module",
@@ -22,19 +22,48 @@
   "build": {
     "appId": "com.watchtogether.app",
     "productName": "Watch Together",
-    "files": ["main.js", "package.json", "node_modules/**/*"],
-    "extraResources": [
-      { "from": "resources/agent", "to": "agent" },
-      { "from": "resources/server", "to": "server" },
-      { "from": "resources/client", "to": "client" }
+    "files": [
+      "main.js",
+      "preload.cjs",
+      "package.json",
+      "node_modules/**/*"
     ],
-    "publish": [{ "provider": "github", "owner": "Sam989892", "repo": "watch-together" }],
+    "extraResources": [
+      {
+        "from": "resources/agent",
+        "to": "agent"
+      },
+      {
+        "from": "resources/server",
+        "to": "server"
+      },
+      {
+        "from": "resources/client",
+        "to": "client"
+      }
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Sam989892",
+        "repo": "watch-together"
+      }
+    ],
     "mac": {
-      "target": ["dmg", "zip"],
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "category": "public.app-category.entertainment",
-      "extendInfo": { "NSMicrophoneUsageDescription": "Watch Together uses your microphone for voice chat during watch parties." }
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Watch Together uses your microphone for voice chat during watch parties."
+      }
     },
-    "win": { "target": "zip" },
-    "linux": { "target": "AppImage" }
+    "win": {
+      "target": "zip"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   }
 }

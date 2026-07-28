@@ -18,6 +18,10 @@ const wss = new WebSocketServer({ server: http });
 /** @type {Map<string, Room>} */
 const rooms = new Map();
 
+// Match room codes forgivingly: ignore case, spaces, and the hyphen, so
+// "abc def", "ABCDEF" and "ABC-DEF" all find the same room.
+const norm = (c) => (c || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+
 function makeCode() {
   const a = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous chars
   const pick = (n) => Array.from({ length: n }, () => a[Math.floor(Math.random() * a.length)]).join("");
@@ -62,15 +66,15 @@ wss.on("connection", (socket) => {
     switch (msg.type) {
       case "create": {
         let code = makeCode();
-        while (rooms.has(code)) code = makeCode();
+        while (rooms.has(norm(code))) code = makeCode();
         room = new Room(code);
-        rooms.set(code, room);
+        rooms.set(norm(code), room);   // keyed by normalized code; room.code stays pretty
         joinRoom(msg);
         break;
       }
       case "join": {
-        room = rooms.get((msg.code || "").toUpperCase());
-        if (!room) return send({ type: "error", code: "no_room", message: "Room not found." });
+        room = rooms.get(norm(msg.code));
+        if (!room) return send({ type: "error", code: "no_room", message: "Room not found — check the code." });
         joinRoom(msg);
         break;
       }
@@ -116,7 +120,7 @@ wss.on("connection", (socket) => {
     room.members.delete(self.id);
     room.broadcast(sysLine(`${self.name} left the room`));
     if (room.hostId === self.id) room.hostId = [...room.members.keys()][0] || null;
-    if (room.members.size === 0) rooms.delete(room.code);
+    if (room.members.size === 0) rooms.delete(norm(room.code));
     else room.broadcast({ type: "roster", members: room.roster() });
   });
 
@@ -164,4 +168,5 @@ function sysEvent(msg, who) {
 
 const sysLine = (text) => ({ type: "system", text, ts: Date.now() });
 
-http.listen(PORT, () => console.log(`Watch Together sync server on port ${PORT}`));
+// Bind all interfaces so a friend on the same network can reach this host by IP.
+http.listen(PORT, "0.0.0.0", () => console.log(`Watch Together sync server on port ${PORT}`));
