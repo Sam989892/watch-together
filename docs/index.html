@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Watch Together — download</title>
+  <meta name="description" content="Play the same movie, perfectly in sync. Download Watch Together for macOS and Windows." />
+  <style>
+    :root {
+      --bg: #0f0f12; --panel: #17171c; --panel-2: #1e1e25; --border: #2a2a33;
+      --text: #f2f2f5; --muted: #a0a0ab; --accent: #7aa2ff; --accent-2: #5b7fe0;
+      --success: #4caf7f; --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: radial-gradient(1200px 600px at 50% -10%, #1a1a24 0%, var(--bg) 60%);
+      color: var(--text); min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 56px 20px 80px; }
+    header { text-align: center; }
+    .logo { font-size: 54px; line-height: 1; }
+    h1 { font-size: 40px; font-weight: 650; margin: 14px 0 6px; letter-spacing: -0.02em; }
+    .tag { color: var(--muted); font-size: 17px; margin: 0 auto; max-width: 520px; }
+    .ver { display: inline-flex; align-items: center; gap: 7px; margin-top: 18px; padding: 5px 12px;
+      border: 1px solid var(--border); border-radius: 999px; font-size: 13px; color: var(--muted); background: var(--panel); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); }
+
+    .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 40px 0 8px; }
+    @media (max-width: 620px) { .cards { grid-template-columns: 1fr; } }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 24px; text-align: center; transition: transform .15s ease, border-color .15s ease; }
+    .card.you { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(122,162,255,.12); }
+    .card:hover { transform: translateY(-2px); }
+    .os { font-size: 34px; }
+    .card h2 { font-size: 19px; margin: 10px 0 2px; font-weight: 600; }
+    .card .meta { color: var(--muted); font-size: 13px; min-height: 18px; }
+    .badge-you { display: inline-block; margin-bottom: 10px; font-size: 11px; letter-spacing: .04em;
+      text-transform: uppercase; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 2px 9px; }
+    .btn { display: inline-block; margin-top: 16px; width: 100%; padding: 13px 18px; border-radius: 11px;
+      background: var(--accent); color: #0b0b0f; font-weight: 640; font-size: 15px; text-decoration: none;
+      border: none; cursor: pointer; transition: background .15s ease; }
+    .btn:hover { background: var(--accent-2); }
+    .btn.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+    .btn.secondary:hover { background: #262630; }
+
+    .note { text-align: center; color: var(--muted); font-size: 13px; margin: 18px auto 0; max-width: 560px; }
+    .note code { background: var(--panel-2); border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; font-size: 12px; }
+
+    section.how { margin-top: 56px; }
+    .how h3 { font-size: 15px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 16px; }
+    .steps { display: grid; gap: 12px; }
+    .step { display: flex; gap: 14px; align-items: flex-start; background: var(--panel); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 18px; }
+    .step .n { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--panel-2);
+      border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--accent); font-weight: 600; }
+    .step p { margin: 2px 0 0; font-size: 14.5px; line-height: 1.5; }
+    .step p b { font-weight: 600; }
+
+    footer { text-align: center; margin-top: 56px; color: var(--muted); font-size: 13px; }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">🎬</div>
+      <h1>Watch Together</h1>
+      <p class="tag">Play the same movie file, perfectly in sync — pause, seek and jump mirror on both screens. Chat and voice built in.</p>
+      <div class="ver"><span class="dot"></span><span id="ver">loading latest release…</span></div>
+    </header>
+
+    <div class="cards">
+      <div class="card" id="card-mac">
+        <div id="you-mac" class="badge-you" style="display:none">Your system</div>
+        <div class="os">🍎</div>
+        <h2>macOS</h2>
+        <div class="meta" id="meta-mac">Apple Silicon · .dmg</div>
+        <a class="btn" id="dl-mac" href="https://github.com/Sam989892/watch-together/releases/latest">Download for Mac</a>
+      </div>
+      <div class="card" id="card-win">
+        <div id="you-win" class="badge-you" style="display:none">Your system</div>
+        <div class="os">🪟</div>
+        <h2>Windows</h2>
+        <div class="meta" id="meta-win">64-bit · .zip (unzip &amp; run)</div>
+        <a class="btn" id="dl-win" href="https://github.com/Sam989892/watch-together/releases/latest">Download for Windows</a>
+      </div>
+    </div>
+
+    <p class="note">
+      First launch shows an "unknown developer" warning (the app isn't code-signed yet) —
+      on Mac <b>right-click → Open</b>; on Windows <b>More info → Run anyway</b>. Both are safe to dismiss.
+      Windows: unzip, then run <code>Watch Together.exe</code>.
+    </p>
+
+    <section class="how">
+      <h3>How to watch together</h3>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><p>Both of you install the app and <b>open the same video file in VLC</b> (drag it in). Click <b>⚡ Set up VLC for me</b> — it turns on VLC's remote control automatically.</p></div>
+        <div class="step"><div class="n">2</div><p><b>You host:</b> leave the server box blank and hit <b>Create a new room</b>. Share your room code — and, if you're on the same Wi‑Fi, your computer's local IP address.</p></div>
+        <div class="step"><div class="n">3</div><p><b>Your friend joins:</b> types your address in "Friend's server address", enters the room code, and clicks <b>Join</b>.</p></div>
+        <div class="step"><div class="n">4</div><p>Press play. Every pause, seek and jump syncs both VLCs. Use the 🎙 button (or <b>M</b>) to talk, and 💬 to chat.</p></div>
+      </div>
+    </section>
+
+    <footer>
+      Free &amp; open source · <a href="https://github.com/Sam989892/watch-together">source on GitHub</a>
+      · <a href="https://github.com/Sam989892/watch-together/releases">all releases</a>
+    </footer>
+  </div>
+
+  <script>
+    const REPO = "Sam989892/watch-together";
+    const fmtMB = (b) => b ? (b / 1048576).toFixed(0) + " MB" : "";
+
+    // Highlight the visitor's OS.
+    (function detect() {
+      const ua = (navigator.userAgent || "");
+      const isWin = /Windows/i.test(ua);
+      const isMac = /Mac/i.test(ua) && !/iPhone|iPad/i.test(ua);
+      if (isWin) { document.getElementById("you-win").style.display = "inline-block"; document.getElementById("card-win").classList.add("you"); }
+      else if (isMac) { document.getElementById("you-mac").style.display = "inline-block"; document.getElementById("card-mac").classList.add("you"); }
+    })();
+
+    // Pull the latest release and wire direct download links.
+    fetch("https://api.github.com/repos/" + REPO + "/releases/latest")
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((rel) => {
+        document.getElementById("ver").textContent = "Latest: " + (rel.tag_name || "release");
+        const win = (rel.assets || []).find((a) => /win.*\.zip$/i.test(a.name));
+        const mac = (rel.assets || []).find((a) => /\.dmg$/i.test(a.name));
+        if (win) { const b = document.getElementById("dl-win"); b.href = win.browser_download_url;
+          document.getElementById("meta-win").textContent = "64-bit · .zip · " + fmtMB(win.size); }
+        if (mac) { const b = document.getElementById("dl-mac"); b.href = mac.browser_download_url;
+          document.getElementById("meta-mac").textContent = "Apple Silicon · .dmg · " + fmtMB(mac.size); }
+      })
+      .catch(() => { document.getElementById("ver").textContent = "Download the latest release"; });
+  </script>
+</body>
+</html>
