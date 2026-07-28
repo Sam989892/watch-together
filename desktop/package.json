@@ -34,8 +34,7 @@
       "category": "public.app-category.entertainment",
       "extendInfo": { "NSMicrophoneUsageDescription": "Watch Together uses your microphone for voice chat during watch parties." }
     },
-    "win": { "target": "nsis" },
-    "nsis": { "oneClick": true, "differentialPackage": false },
+    "win": { "target": "zip" },
     "linux": { "target": "AppImage" }
   }
 }
