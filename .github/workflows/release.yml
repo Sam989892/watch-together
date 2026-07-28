@@ -1,8 +1,9 @@
 name: Build & release installers
 
-# Push a version tag (e.g. v0.1.0) to build installers for macOS + Windows and
-# attach them to a GitHub Release. electron-updater reads that release, so users
-# on an older version update automatically.
+# Push a version tag (e.g. v0.1.0) to build installers and attach them to a
+# GitHub Release. macOS uses electron-builder's normal publish (dmg + zip,
+# which powers auto-update). Windows builds the app UNPACKED and zips it with
+# a native tool, because electron-builder's archiver hangs on the runner.
 on:
   push:
     tags: ["v*"]
@@ -11,44 +12,56 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, windows-2022]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 20   # fail fast instead of hanging (real hangs finish in <5m)
+  mac:
+    runs-on: macos-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-
-      # Windows Defender real-time scanning locks files mid-build and makes
-      # electron-builder hang for the whole job. Turn it off on the runner.
-      - name: Disable Defender real-time scanning (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: Set-MpPreference -DisableRealtimeMonitoring $true
-        continue-on-error: true
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      # The desktop app bundles the client build + the agent's and server's
-      # node_modules (see desktop/prepack.mjs), so install all of them.
       - name: Install dependencies
         run: |
           npm --prefix client install
           npm --prefix agent install
           npm --prefix server install
           npm --prefix desktop install
-
-      - name: Build & publish installers
+      - name: Build & publish (macOS)
         working-directory: desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Don't hunt for a code-signing cert — electron-builder otherwise hangs
-          # on Windows CI trying to auto-discover one. Builds stay unsigned.
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: |
           npm run prepack:res
-          npx electron-builder --publish always
+          npx electron-builder --mac --publish always
+
+  windows:
+    needs: mac   # upload into the draft release the mac job creates
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: |
+          npm --prefix client install
+          npm --prefix agent install
+          npm --prefix server install
+          npm --prefix desktop install
+      - name: Build unpacked, zip, upload (Windows)
+        working-directory: desktop
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: |
+          npm run prepack:res
+          # --dir builds dist/win-unpacked and stops — it skips the archive
+          # step that hangs electron-builder on this runner.
+          npx electron-builder --win --dir
+          $ver = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $zip = "Watch-Together-$ver-win-x64.zip"
+          Compress-Archive -Path dist/win-unpacked/* -DestinationPath "dist/$zip" -Force
+          gh release upload ${{ github.ref_name }} "dist/$zip" --clobber
