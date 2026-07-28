@@ -15,11 +15,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # windows-2022, not windows-latest: electron-builder 25.x hangs building
-        # the NSIS installer on the Windows Server 2025 runner image.
         os: [macos-latest, windows-2022]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30   # fail fast instead of burning the 6-hour max on a hang
+    timeout-minutes: 20   # fail fast instead of hanging (real hangs finish in <5m)
     steps:
       - uses: actions/checkout@v4
 
@@ -40,6 +38,9 @@ jobs:
         working-directory: desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Don't hunt for a code-signing cert — electron-builder otherwise hangs
+          # on Windows CI trying to auto-discover one. Builds stay unsigned.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
         run: |
           npm run prepack:res
           npx electron-builder --publish always
