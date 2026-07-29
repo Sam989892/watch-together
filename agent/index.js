@@ -133,6 +133,7 @@ wss.on("connection", (local) => {
     if (!session) return;
     session.closed = true;
     clearInterval(session.pollTimer);
+    clearInterval(session.keepAlive);
     clearTimeout(session.retryTimer);
     session.upstream?.close();
     session = null;
@@ -150,6 +151,12 @@ wss.on("connection", (local) => {
       ws.send(JSON.stringify({ type, code: session.code, ...session.join }));
       session.retries = 0;
       if (!session.pollTimer) session.pollTimer = setInterval(() => pollVlc(session), 1000);
+      // Keepalive: a tiny periodic message (ignored by the server) so a free
+      // host doesn't treat a quiet movie stretch as idle and nap mid-session.
+      clearInterval(session.keepAlive);
+      session.keepAlive = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "keepalive" }));
+      }, 4 * 60 * 1000);
     });
 
     ws.on("message", async (raw) => {
@@ -162,7 +169,7 @@ wss.on("connection", (local) => {
       if (["play", "pause", "seek", "jump"].includes(m.type)) await applyToVlc(session, m.type, m.time);
     });
 
-    ws.on("close", () => scheduleReconnect(session));
+    ws.on("close", () => { clearInterval(session.keepAlive); scheduleReconnect(session); });
     ws.on("error", () => { /* a close event always follows; reconnect handled there */ });
   }
 

@@ -1,0 +1,13 @@
+# One-click deploy of the Watch Together sync server to Render (free, no card).
+# In Render: New → Blueprint → pick this repo → Apply. You get a public
+# wss:// URL that both people paste into "Friend's server address".
+services:
+  - type: web
+    name: watch-together-server
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install
+    startCommand: node index.js
+    healthCheckPath: /
+    autoDeploy: true
