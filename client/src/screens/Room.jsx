@@ -49,7 +49,7 @@ export default function Room({ me, roomCode, roster, messages, fileCheck, vlc, n
         <div style={{ background: "var(--surface-1)", borderRadius: 12, padding: 20, flex: 1.4, minWidth: 0 }}>
           <Header roomCode={roomCode} onLeave={onLeave} />
 
-          <Share net={net} roomCode={roomCode} />
+          <Share roomCode={roomCode} />
 
           {fileCheck && !fileCheck.match ? (
             <FileMismatch files={fileCheck.files} />
@@ -110,22 +110,13 @@ function CopyButton({ value, label }) {
   );
 }
 
-// When you're hosting, show exactly what to send your friend so they can join.
-function Share({ net, roomCode }) {
-  if (!net?.hosting) return null;
+// Everyone's on the same hosted server, so joining needs only the room code.
+function Share({ roomCode }) {
   return (
     <div style={{ background: "var(--bg-accent, var(--surface-2))", border: "0.5px solid var(--border-accent, var(--border))",
-      borderRadius: 12, padding: "10px 14px", marginBottom: 14 }}>
-      <p style={{ fontSize: 12, fontWeight: 500, margin: "0 0 6px" }}>You're hosting — send your friend these to join:</p>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <ShareChip label="Server address" value={net.hostIp || "no network found"} copyable={!!net.hostIp} />
-        <ShareChip label="Room code" value={roomCode} copyable />
-      </div>
-      {!net.hostIp && (
-        <p style={{ fontSize: 11, color: "var(--text-muted)", margin: "6px 0 0" }}>
-          Couldn't find your local network address — for a friend on the same Wi‑Fi, share your computer's IP.
-        </p>
-      )}
+      borderRadius: 12, padding: "12px 14px", marginBottom: 14 }}>
+      <p style={{ fontSize: 12, fontWeight: 500, margin: "0 0 8px" }}>Send your friend this code so they can join:</p>
+      <ShareChip label="Room code" value={roomCode} copyable />
     </div>
   );
 }

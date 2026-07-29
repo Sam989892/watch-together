@@ -5,7 +5,6 @@ import Tooltip from "../components/Tooltip.jsx";
 // Lobby: pick avatar + name, connect VLC, create or join a room.
 export default function Lobby({ me, setMe, onEnter, onTestVlc, onAutoSetup, onOpenAudio, vlcTest, vlcAuto, agentReady }) {
   const [code, setCode] = useState("");
-  const [server, setServer] = useState(""); // blank = host on this app's own server
   const [vlcPass, setVlcPass] = useState("");
   const [vlcState, setVlcState] = useState(me.vlcConnected ? "connected" : "idle");
   const [vlcError, setVlcError] = useState("");
@@ -84,21 +83,17 @@ export default function Lobby({ me, setMe, onEnter, onTestVlc, onAutoSetup, onOp
           🎧 Test mic &amp; choose audio devices
         </button>
 
-        <input type="text" placeholder="Friend's server address (leave blank to host)"
-          value={server} onChange={(e) => setServer(e.target.value.trim())}
-          style={{ width: "100%", marginBottom: 10, fontSize: 12 }} />
-
         <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
           <input type="text" placeholder="Enter room code" value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())} style={{ flex: 1 }} />
           <button disabled={!code || !agentReady}
-            onClick={() => onEnter({ create: false, code, vlcPassword: vlcPass, serverUrl: server })}>Join</button>
+            onClick={() => onEnter({ create: false, code, vlcPassword: vlcPass })}>Join</button>
         </div>
 
         <Divider />
 
         <button className="primary" style={{ width: "100%", marginTop: 8 }} disabled={!agentReady}
-          onClick={() => onEnter({ create: true, vlcPassword: vlcPass, serverUrl: server })}>
+          onClick={() => onEnter({ create: true, vlcPassword: vlcPass })}>
           + Create a new room
         </button>
 

@@ -50,24 +50,21 @@ async function checkForUpdates(win) {
   } catch { /* offline or rate-limited — ignore */ }
 }
 
-// By default the agent relays to the sync server running inside this same app,
-// so a solo/host machine needs nothing external. Override SERVER to join
-// someone else's server instead.
-process.env.SERVER = process.env.SERVER || "ws://127.0.0.1:8787";
+// Everyone relays through the one hosted sync server, so there's no "host it
+// yourself" choice to get wrong. (Override SERVER only for local development.)
+process.env.SERVER = process.env.SERVER || "wss://watch-together-server-qg6g.onrender.com";
 
 // In dev the pieces live in sibling folders; once packaged, prepack.mjs copies
 // them under the app's resources (process.resourcesPath).
 const part = (...p) =>
   app.isPackaged ? join(process.resourcesPath, ...p) : join(__dirname, "..", ...p);
-const SERVER_ENTRY = part("server", "index.js");
 const AGENT_ENTRY = part("agent", "index.js");
 const CLIENT_INDEX = app.isPackaged
   ? join(process.resourcesPath, "client", "index.html")
   : join(__dirname, "..", "client", "dist", "index.html");
 
-// Booting each by import starts its listener as a side effect, exactly like
-// running it standalone.
-const startServer = () => import(pathToFileURL(SERVER_ENTRY).href);
+// Booting the agent by import starts its local listener as a side effect,
+// exactly like running it standalone.
 const startAgent = () => import(pathToFileURL(AGENT_ENTRY).href);
 
 function createWindow() {
@@ -97,8 +94,7 @@ app.whenReady().then(async () => {
   // Allow the mic (voice chat); deny other permission requests.
   session.defaultSession.setPermissionRequestHandler((_wc, permission, cb) => cb(permission === "media"));
 
-  await startServer();   // shared room relay on :8787 (this app hosts it)
-  await startAgent();    // VLC bridge on :8899, relays to the server above
+  await startAgent();    // VLC bridge on :8899, relays to the hosted server
   const win = createWindow();
 
   // A few seconds after the window is up, check GitHub for a newer version.
