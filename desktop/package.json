@@ -1,6 +1,6 @@
 {
   "name": "watch-together-desktop",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Watch Together as one desktop app (agent + UI in Electron)",
   "type": "module",
@@ -11,9 +11,6 @@
     "prepack:res": "node prepack.mjs",
     "pack": "npm run prepack:res && electron-builder --dir",
     "dist": "npm run prepack:res && electron-builder"
-  },
-  "dependencies": {
-    "electron-updater": "^6.3.9"
   },
   "devDependencies": {
     "electron": "^33.2.0",
