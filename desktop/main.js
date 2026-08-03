@@ -5,11 +5,29 @@
 //   sync server : ws://localhost:8787   (shared room relay)
 //   agent       : ws://localhost:8899   (this machine's VLC bridge + UI link)
 
-import { app, BrowserWindow, shell, session, ipcMain, clipboard, dialog } from "electron";
+import { app, BrowserWindow, shell, session, ipcMain, clipboard, dialog, screen } from "electron";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// A floating, click-through, always-on-top window that shows incoming chat over
+// whatever's playing (even VLC fullscreen), so you don't have to switch apps.
+let overlayWin = null;
+function createOverlay() {
+  const { width } = screen.getPrimaryDisplay().workAreaSize;
+  overlayWin = new BrowserWindow({
+    width: 460, height: 96,
+    x: Math.round(width / 2 - 230), y: 22,
+    frame: false, transparent: true, resizable: false, movable: false,
+    focusable: false, skipTaskbar: true, hasShadow: false, show: false,
+    webPreferences: { preload: join(__dirname, "overlay-preload.cjs") },
+  });
+  overlayWin.setAlwaysOnTop(true, "screen-saver");            // above fullscreen apps
+  overlayWin.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  overlayWin.setIgnoreMouseEvents(true);                       // click-through
+  overlayWin.loadFile(join(__dirname, "overlay.html"));
+}
 
 const REPO = "Sam989892/watch-together";
 const DOWNLOAD_PAGE = "https://sam989892.github.io/watch-together/";
@@ -90,11 +108,25 @@ function createWindow() {
 // Reliable copy for the UI (see preload.cjs).
 ipcMain.handle("clipboard:write", (_e, text) => { clipboard.writeText(String(text)); return true; });
 
+// Chat overlay: the main UI forwards incoming messages here; we pop the floating
+// window, hand it the message, and hide it again after it fades.
+let overlayEnabled = true;
+let overlayHideTimer = null;
+ipcMain.on("overlay:enabled", (_e, on) => { overlayEnabled = !!on; if (!on) overlayWin?.hide(); });
+ipcMain.on("overlay:notify", (_e, msg) => {
+  if (!overlayEnabled || !overlayWin) return;
+  overlayWin.showInactive();                    // show without stealing focus
+  overlayWin.webContents.send("overlay:chat", msg);
+  clearTimeout(overlayHideTimer);
+  overlayHideTimer = setTimeout(() => overlayWin?.hide(), 6000);
+});
+
 app.whenReady().then(async () => {
   // Allow the mic (voice chat); deny other permission requests.
   session.defaultSession.setPermissionRequestHandler((_wc, permission, cb) => cb(permission === "media"));
 
   await startAgent();    // VLC bridge on :8899, relays to the hosted server
+  createOverlay();
   const win = createWindow();
 
   // A few seconds after the window is up, check GitHub for a newer version.

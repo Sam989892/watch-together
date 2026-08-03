@@ -4,9 +4,15 @@
 // so an idle/muted call uses no bandwidth.
 
 const RTC_CONFIG = {
-  // Public STUN is enough for most home networks. Strict/symmetric NATs would
-  // additionally need a TURN relay (not bundled) to connect over the internet.
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+  // STUN finds each side's public address; TURN relays the audio when a router
+  // won't allow a direct connection (common between two different home networks
+  // / countries). These TURN servers are Metered's free Open Relay.
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+    { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
+    { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
+  ],
 };
 
 export function createVoice({ sendSignal, onRemoteStream, onError, inputId = "" }) {

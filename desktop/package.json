@@ -1,6 +1,6 @@
 {
   "name": "watch-together-desktop",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "description": "Watch Together as one desktop app (agent + UI in Electron)",
   "type": "module",
@@ -22,6 +22,8 @@
     "files": [
       "main.js",
       "preload.cjs",
+      "overlay.html",
+      "overlay-preload.cjs",
       "package.json",
       "node_modules/**/*"
     ],

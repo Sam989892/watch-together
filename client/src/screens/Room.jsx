@@ -9,7 +9,7 @@ import FileMismatch from "../components/FileMismatch.jsx";
 
 // Main room. Shows the now-playing status panel, sync controls, participants,
 // and the chat column. Wires keyboard shortcuts to sync actions.
-export default function Room({ me, roomCode, roster, messages, fileCheck, vlc, net, micOn, onToggleMic, onOpenAudio, onLeave, send }) {
+export default function Room({ me, roomCode, roster, messages, fileCheck, vlc, net, alerts, onToggleAlerts, onLeave, send }) {
   const [showShortcuts, setShowShortcuts] = useState(false);
   // Playback state is whatever local VLC actually reports (via the agent).
   const { playing, time, duration } = vlc;
@@ -35,7 +35,6 @@ export default function Room({ me, roomCode, roster, messages, fileCheck, vlc, n
         case "ArrowLeft": control("seek", Math.max(0, time - 10)); break;
         case "ArrowRight": control("seek", Math.min(duration, time + 10)); break;
         case "s": case "S": control("jump", time); break;
-        case "m": case "M": onToggleMic(); break;
         case "?": setShowShortcuts((v) => !v); break;
       }
     }
@@ -64,8 +63,8 @@ export default function Room({ me, roomCode, roster, messages, fileCheck, vlc, n
             onJump={jumpTo}
           />
 
-          <Participants roster={roster} me={me} micOn={micOn} onToggleMic={onToggleMic}
-            onOpenAudio={onOpenAudio} onShortcuts={() => setShowShortcuts(true)} />
+          <Participants roster={roster} me={me} alerts={alerts} onToggleAlerts={onToggleAlerts}
+            onShortcuts={() => setShowShortcuts(true)} />
         </div>
 
         <Chat messages={messages} onSend={(text) => send({ type: "chat", text })} />

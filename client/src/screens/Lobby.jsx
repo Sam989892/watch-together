@@ -79,9 +79,6 @@ export default function Lobby({ me, setMe, onEnter, onTestVlc, onAutoSetup, onOp
         <VlcRow state={vlcState} pass={vlcPass} setPass={setVlcPass} onTest={testVlc}
           onAutoSetup={autoSetup} error={vlcError} disabled={!agentReady} />
 
-        <button onClick={onOpenAudio} style={{ width: "100%", marginBottom: 18, fontSize: 12, height: 30 }}>
-          🎧 Test mic &amp; choose audio devices
-        </button>
 
         <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
           <input type="text" placeholder="Enter room code" value={code}

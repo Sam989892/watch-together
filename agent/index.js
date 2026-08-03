@@ -101,6 +101,7 @@ wss.on("connection", (local) => {
         last: snapshot(s),                                    // truthful poll baseline
         firstType: msg.type, code: msg.code, joinedOnce: false,
         serverUrl: normalizeServer(msg.serverUrl),   // blank = host on this app's own server
+        reportedFile: s ? s.file : null,             // last file name told to the server
         retries: 0, retryTimer: null, closed: false,
         // Everything the server needs to (re-)admit us to the room. `size` is
         // the real byte count — the server matches on it when both peers have it.
@@ -220,6 +221,17 @@ async function pollVlc(session) {
 
   const up = session.upstream;
   if (session.applying || up?.readyState !== WebSocket.OPEN) { session.last = snapshot(s); return; }
+
+  // If the open file changed, re-report it so the room's file-match check
+  // re-runs (fixes a stale "files don't match" after both open the same file).
+  if (s.file !== session.reportedFile) {
+    session.reportedFile = s.file;
+    const size = s.file ? await session.vlc.currentFileSize() : null;
+    up.send(JSON.stringify({
+      type: "presence",
+      file: s.file ? { name: s.file, size, duration: Math.round(s.length) } : null,
+    }));
+  }
 
   const { last } = session;
   // While playing, time is *supposed* to advance by the elapsed wall clock;

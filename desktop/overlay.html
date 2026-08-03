@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    html, body { margin: 0; height: 100%; background: transparent; overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    #toast {
+      margin: 8px auto; max-width: 440px;
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; border-radius: 14px;
+      background: rgba(20, 20, 26, 0.92); color: #f2f2f5;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.45); border: 0.5px solid rgba(255,255,255,0.12);
+      opacity: 0; transform: translateY(-8px);
+      transition: opacity .28s ease, transform .28s ease;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #av { font-size: 20px; flex: none; }
+    #who { font-weight: 600; font-size: 13px; white-space: nowrap; }
+    #msg { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div id="toast">
+    <span id="av">💬</span>
+    <span id="who"></span>
+    <span id="msg"></span>
+  </div>
+  <script>
+    const toast = document.getElementById("toast");
+    let hideT = null, lastBeep = 0;
+
+    // Short, soft beep. Rate-limited so a burst of messages doesn't spam it.
+    function beep() {
+      const now = Date.now();
+      if (now - lastBeep < 2000) return;
+      lastBeep = now;
+      try {
+        const c = new AudioContext();
+        const o = c.createOscillator(), g = c.createGain();
+        o.frequency.value = 880; g.gain.value = 0.07;
+        o.connect(g); g.connect(c.destination);
+        o.start();
+        g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.22);
+        o.stop(c.currentTime + 0.24);
+        setTimeout(() => c.close(), 400);
+      } catch {}
+    }
+
+    window.overlayApi?.onChat((m) => {
+      document.getElementById("av").textContent = m.avatar || "💬";
+      document.getElementById("who").textContent = (m.from || "");
+      document.getElementById("msg").textContent = m.text || "";
+      toast.classList.add("show");
+      beep();
+      clearTimeout(hideT);
+      hideT = setTimeout(() => toast.classList.remove("show"), 4800); // fades on its own
+    });
+  </script>
+</body>
+</html>

@@ -92,7 +92,7 @@ wss.on("connection", (socket) => {
       }
       case "chat": {
         if (!room || !msg.text) return;
-        room.broadcast({ type: "chat", from: self.name, avatar: self.avatar, text: String(msg.text).slice(0, 500), ts: Date.now() });
+        room.broadcast({ type: "chat", id: self.id, from: self.name, avatar: self.avatar, text: String(msg.text).slice(0, 500), ts: Date.now() });
         break;
       }
       case "presence": {

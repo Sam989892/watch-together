@@ -6,3 +6,9 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("appClipboard", {
   write: (text) => ipcRenderer.invoke("clipboard:write", String(text)),
 });
+
+// Floating chat overlay (shows incoming messages over VLC).
+contextBridge.exposeInMainWorld("appOverlay", {
+  notify: (msg) => ipcRenderer.send("overlay:notify", msg),
+  setEnabled: (on) => ipcRenderer.send("overlay:enabled", !!on),
+});

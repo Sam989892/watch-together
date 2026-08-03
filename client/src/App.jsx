@@ -5,11 +5,23 @@ import Lobby from "./screens/Lobby.jsx";
 import Room from "./screens/Room.jsx";
 import AudioSettings from "./components/AudioSettings.jsx";
 
+// Voice chat is built (WebRTC) but disabled until relay reliability is sorted —
+// shown as "coming soon" in the UI. Flip to true to re-enable.
+const VOICE_ENABLED = false;
+
 // Top-level state machine: lobby -> room. Owns the connection to the local
 // agent (the agent, not the browser, talks to VLC + the sync server).
+// Remember the last name + avatar between launches.
+function loadMe() {
+  try {
+    const s = JSON.parse(localStorage.getItem("wt-me") || "{}");
+    return { name: s.name || "Alex", avatar: s.avatar || "🦊", vlcConnected: false };
+  } catch { return { name: "Alex", avatar: "🦊", vlcConnected: false }; }
+}
+
 export default function App() {
   const [screen, setScreen] = useState("lobby");
-  const [me, setMe] = useState({ name: "Alex", avatar: "🦊", vlcConnected: false });
+  const [me, setMe] = useState(loadMe);
   const [roomCode, setRoomCode] = useState("");
   const [roster, setRoster] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -25,6 +37,7 @@ export default function App() {
   const [audio, setAudio] = useState({ inputId: "", outputId: "" }); // "" = system default
   const [showAudio, setShowAudio] = useState(false);
   const [net, setNet] = useState({ hosting: false, hostIp: null }); // who's hosting + share address
+  const [alerts, setAlerts] = useState(true); // floating chat overlay + sound on/off
   const conn = useRef(null);
   const youId = useRef(null);      // our member id on the sync server
   const voice = useRef(null);      // WebRTC voice controller
@@ -35,7 +48,11 @@ export default function App() {
       case "joined": youId.current = msg.youId; setRoomCode(msg.code); setScreen("room"); break;
       case "roster": setRoster(msg.members); break;
       case "system": setMessages((m) => [...m, { kind: "system", ...msg }]); break;
-      case "chat": setMessages((m) => [...m, { kind: "chat", ...msg }]); break;
+      case "chat":
+        setMessages((m) => [...m, { kind: "chat", ...msg }]);
+        // Pop the floating overlay for messages from the other person (not our own).
+        if (msg.id !== youId.current) window.appOverlay?.notify({ from: msg.from, avatar: msg.avatar, text: msg.text });
+        break;
       case "filecheck": setFileCheck(msg); break;
       case "vlc-test-result": setVlcTest(msg); break;
       case "vlc-autosetup-result": setVlcAuto(msg); break;
@@ -67,8 +84,18 @@ export default function App() {
     return () => { conn.current?.close(); voice.current?.close(); };
   }, []);
 
+  // Remember the chosen name + avatar for next launch.
+  useEffect(() => {
+    try { localStorage.setItem("wt-me", JSON.stringify({ name: me.name, avatar: me.avatar })); } catch {}
+  }, [me.name, me.avatar]);
+
+  function toggleAlerts() {
+    setAlerts((on) => { const next = !on; window.appOverlay?.setEnabled(next); return next; });
+  }
+
   // Start a P2P voice call once a peer is in the room; tear it down when alone.
   useEffect(() => {
+    if (!VOICE_ENABLED) return; // voice chat is "coming soon" — see the mic button
     const peer = roster.find((m) => m.id && m.id !== youId.current);
     if (peer && !voice.current) {
       voice.current = createVoice({
@@ -156,9 +183,8 @@ export default function App() {
         fileCheck={fileCheck}
         vlc={vlc}
         net={net}
-        micOn={micOn}
-        onToggleMic={toggleMic}
-        onOpenAudio={() => setShowAudio(true)}
+        alerts={alerts}
+        onToggleAlerts={toggleAlerts}
         onLeave={leaveRoom}
         send={(obj) => conn.current?.send(obj)}
       />
