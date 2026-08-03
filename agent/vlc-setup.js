@@ -62,17 +62,23 @@ function launchVlc() {
   return true;
 }
 
-// Full flow: patch config, restart VLC, wait for its web interface to answer.
-// `ping` is supplied by the agent (a VlcClient.ping bound to this password).
+// Full flow: restart VLC with the web interface + a known password, then wait
+// for it to answer. `ping` is supplied by the agent (VlcClient.ping bound to
+// this password).
+//
+// Order matters: VLC rewrites its config file when it QUITS, so we must quit
+// first, let it finish writing, THEN patch the file — otherwise VLC clobbers
+// our new password and the relaunched instance uses the old one.
 export async function autoSetupVlc(password, port, ping) {
-  const patched = patchVlcrc(password, port);
-  if (!patched.ok) return patched;
-
   await quitVlc();
-  await delay(1500);                 // let it fully exit before relaunch
+  await delay(2500);                 // let it fully exit and finish saving its config
+
+  const patched = patchVlcrc(password, port);
+  if (!patched.ok) { launchVlc(); return patched; } // reopen VLC even if patch failed
+
   if (!launchVlc()) return { ok: false, error: "Couldn't find VLC to relaunch." };
 
-  for (let i = 0; i < 20; i++) {      // up to ~10s for the interface to come up
+  for (let i = 0; i < 40; i++) {      // up to ~20s for the interface to come up
     await delay(500);
     if (await ping()) return { ok: true };
   }

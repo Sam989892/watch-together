@@ -12,3 +12,8 @@ contextBridge.exposeInMainWorld("appOverlay", {
   notify: (msg) => ipcRenderer.send("overlay:notify", msg),
   setEnabled: (on) => ipcRenderer.send("overlay:enabled", !!on),
 });
+
+// App version, for display + the peer version check.
+contextBridge.exposeInMainWorld("appInfo", {
+  version: ipcRenderer.sendSync("app:version"),
+});

@@ -9,7 +9,7 @@ import FileMismatch from "../components/FileMismatch.jsx";
 
 // Main room. Shows the now-playing status panel, sync controls, participants,
 // and the chat column. Wires keyboard shortcuts to sync actions.
-export default function Room({ me, roomCode, roster, messages, fileCheck, vlc, net, alerts, onToggleAlerts, onLeave, send }) {
+export default function Room({ me, roomCode, roster, messages, fileCheck, vlc, net, alerts, onToggleAlerts, peerVersion, myVersion, onLeave, send }) {
   const [showShortcuts, setShowShortcuts] = useState(false);
   // Playback state is whatever local VLC actually reports (via the agent).
   const { playing, time, duration } = vlc;
@@ -47,6 +47,17 @@ export default function Room({ me, roomCode, roster, messages, fileCheck, vlc, n
       <div style={{ display: "flex", gap: 12, maxWidth: 900, margin: "0 auto" }}>
         <div style={{ background: "var(--surface-1)", borderRadius: 12, padding: 20, flex: 1.4, minWidth: 0 }}>
           <Header roomCode={roomCode} onLeave={onLeave} />
+
+          {peerVersion && (
+            <div style={{ background: "#5a3b12", border: "0.5px solid #a5771f", borderRadius: 12,
+              padding: "10px 14px", marginBottom: 14 }}>
+              <p style={{ fontSize: 12, fontWeight: 500, margin: "0 0 2px", color: "#ffd48a" }}>⚠️ Different app versions</p>
+              <p style={{ fontSize: 12, color: "#f0d9b0", margin: 0 }}>
+                You're on v{myVersion}, your friend is on v{peerVersion}. Please both install the
+                same (latest) version from the download page so everything syncs correctly.
+              </p>
+            </div>
+          )}
 
           <Share roomCode={roomCode} />
 

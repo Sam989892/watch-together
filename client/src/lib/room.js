@@ -5,6 +5,9 @@
 // Use 127.0.0.1, not "localhost": on Windows "localhost" can resolve to IPv6
 // (::1) while the agent binds IPv4, so the UI silently fails to connect.
 export const AGENT_URL = import.meta.env.VITE_AGENT || "ws://127.0.0.1:8899";
+
+// The app's version (from Electron); "dev" when run in a plain browser.
+export const APP_VERSION = (typeof window !== "undefined" && window.appInfo?.version) || "dev";
 export const AVATARS = ["🦊", "🐼", "🐸", "🐙", "🦉", "🐢", "🦝", "🐱"];
 
 export function fmtTime(t) {

@@ -108,6 +108,9 @@ function createWindow() {
 // Reliable copy for the UI (see preload.cjs).
 ipcMain.handle("clipboard:write", (_e, text) => { clipboard.writeText(String(text)); return true; });
 
+// Let the UI read the app version synchronously (for display + peer version check).
+ipcMain.on("app:version", (e) => { e.returnValue = app.getVersion(); });
+
 // Chat overlay: the main UI forwards incoming messages here; we pop the floating
 // window, hand it the message, and hide it again after it fades.
 let overlayEnabled = true;

@@ -1,6 +1,6 @@
 {
   "name": "watch-together-desktop",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "description": "Watch Together as one desktop app (agent + UI in Electron)",
   "type": "module",

@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
-import { AVATARS } from "../lib/room.js";
+import { AVATARS, APP_VERSION } from "../lib/room.js";
 import Tooltip from "../components/Tooltip.jsx";
 
 // Lobby: pick avatar + name, connect VLC, create or join a room.
 export default function Lobby({ me, setMe, onEnter, onTestVlc, onAutoSetup, onOpenAudio, vlcTest, vlcAuto, agentReady }) {
   const [code, setCode] = useState("");
-  const [vlcPass, setVlcPass] = useState("");
+  const [vlcPass, setVlcPass] = useState(() => { try { return localStorage.getItem("wt-vlcpass") || ""; } catch { return ""; } });
   const [vlcState, setVlcState] = useState(me.vlcConnected ? "connected" : "idle");
   const [vlcError, setVlcError] = useState("");
+
+  // Remember the VLC password so it doesn't have to be retyped each launch.
+  useEffect(() => { try { localStorage.setItem("wt-vlcpass", vlcPass); } catch {} }, [vlcPass]);
 
   // React to the real result the agent sends back after pinging local VLC.
   useEffect(() => {
@@ -102,6 +105,9 @@ export default function Lobby({ me, setMe, onEnter, onTestVlc, onAutoSetup, onOp
           ) : (
             "Connecting to your local agent…"
           )}
+        </p>
+        <p style={{ fontSize: 10, color: "var(--text-muted)", textAlign: "center", marginTop: 6, opacity: 0.7 }}>
+          v{APP_VERSION}
         </p>
       </div>
     </div>

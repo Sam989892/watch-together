@@ -106,7 +106,7 @@ wss.on("connection", (local) => {
         // Everything the server needs to (re-)admit us to the room. `size` is
         // the real byte count — the server matches on it when both peers have it.
         join: {
-          name: msg.name, avatar: msg.avatar, vlcConnected: !!s,
+          name: msg.name, avatar: msg.avatar, vlcConnected: !!s, appVersion: msg.appVersion,
           file: s ? { name: s.file, size, duration: Math.round(s.length) } : null,
         },
       };

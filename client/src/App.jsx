@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { connect } from "./lib/room.js";
+import { connect, APP_VERSION } from "./lib/room.js";
 import { createVoice } from "./lib/voice.js";
 import Lobby from "./screens/Lobby.jsx";
 import Room from "./screens/Room.jsx";
@@ -38,6 +38,7 @@ export default function App() {
   const [showAudio, setShowAudio] = useState(false);
   const [net, setNet] = useState({ hosting: false, hostIp: null }); // who's hosting + share address
   const [alerts, setAlerts] = useState(true); // floating chat overlay + sound on/off
+  const [peerVersion, setPeerVersion] = useState(null); // set if the other person's app version differs
   const conn = useRef(null);
   const youId = useRef(null);      // our member id on the sync server
   const voice = useRef(null);      // WebRTC voice controller
@@ -46,7 +47,13 @@ export default function App() {
   function handle(msg) {
     switch (msg.type) {
       case "joined": youId.current = msg.youId; setRoomCode(msg.code); setScreen("room"); break;
-      case "roster": setRoster(msg.members); break;
+      case "roster": {
+        setRoster(msg.members);
+        // Flag a peer running a different app version (sync bugs come from this).
+        const other = msg.members.find((m) => m.id !== youId.current && m.appVersion && m.appVersion !== APP_VERSION);
+        setPeerVersion(other ? other.appVersion : null);
+        break;
+      }
       case "system": setMessages((m) => [...m, { kind: "system", ...msg }]); break;
       case "chat":
         setMessages((m) => [...m, { kind: "chat", ...msg }]);
@@ -141,14 +148,14 @@ export default function App() {
     conn.current?.send({ type: "vlc-autosetup", vlcPassword });
   }
 
-  function enterRoom({ create, code, vlcPassword, serverUrl }) {
+  function enterRoom({ create, code, vlcPassword }) {
     conn.current?.send({
       type: create ? "create" : "join",
       code,
       name: me.name,
       avatar: me.avatar,
       vlcPassword,
-      serverUrl, // blank = the app's own built-in server (you host)
+      appVersion: APP_VERSION, // so peers can be warned about version mismatches
     });
   }
 
@@ -185,6 +192,8 @@ export default function App() {
         net={net}
         alerts={alerts}
         onToggleAlerts={toggleAlerts}
+        peerVersion={peerVersion}
+        myVersion={APP_VERSION}
         onLeave={leaveRoom}
         send={(obj) => conn.current?.send(obj)}
       />

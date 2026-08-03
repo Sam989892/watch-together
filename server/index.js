@@ -45,7 +45,7 @@ class Room {
     return [...this.members.values()].map((m) => ({
       id: m.id, name: m.name, avatar: m.avatar,
       micOn: m.micOn, vlcConnected: m.vlcConnected,
-      file: m.file, isHost: m.id === this.hostId,
+      file: m.file, appVersion: m.appVersion, isHost: m.id === this.hostId,
     }));
   }
 }
@@ -55,7 +55,7 @@ let nextId = 1;
 wss.on("connection", (socket) => {
   const id = String(nextId++);
   let room = null;
-  const self = { id, socket, name: "Guest", avatar: "🦊", micOn: false, vlcConnected: false, file: null };
+  const self = { id, socket, name: "Guest", avatar: "🦊", micOn: false, vlcConnected: false, file: null, appVersion: null };
 
   const send = (obj) => socket.readyState === 1 && socket.send(JSON.stringify(obj));
 
@@ -129,6 +129,7 @@ wss.on("connection", (socket) => {
     self.avatar = msg.avatar || "🦊";
     self.vlcConnected = !!msg.vlcConnected;
     self.file = msg.file || null;
+    self.appVersion = msg.appVersion || null;
     room.members.set(self.id, self);
     if (!room.hostId) room.hostId = self.id;
     send({ type: "joined", code: room.code, youId: self.id, playback: room.playback });
