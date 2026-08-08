@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import { AVATARS, APP_VERSION } from "../lib/room.js";
+import { useEffect, useRef, useState } from "react";
+import { AVATARS, APP_VERSION, copyText } from "../lib/room.js";
+import { myId, recentRooms, friends, addFriend, removeFriend, sharedRoomCode } from "../lib/store.js";
 import Tooltip from "../components/Tooltip.jsx";
 
 // Lobby: pick avatar + name, connect VLC, create or join a room.
@@ -8,9 +9,21 @@ export default function Lobby({ me, setMe, onEnter, onTestVlc, onAutoSetup, onOp
   const [vlcPass, setVlcPass] = useState(() => { try { return localStorage.getItem("wt-vlcpass") || ""; } catch { return ""; } });
   const [vlcState, setVlcState] = useState(me.vlcConnected ? "connected" : "idle");
   const [vlcError, setVlcError] = useState("");
+  const [friendList, setFriendList] = useState(friends);
+  const uid = myId();
+  const recent = recentRooms();
+  const autoTried = useRef(false);
 
   // Remember the VLC password so it doesn't have to be retyped each launch.
   useEffect(() => { try { localStorage.setItem("wt-vlcpass", vlcPass); } catch {} }, [vlcPass]);
+
+  // Auto-connect VLC on launch if we already know the password — no clicking Test.
+  useEffect(() => {
+    if (agentReady && vlcPass && vlcState === "idle" && !autoTried.current) {
+      autoTried.current = true;
+      testVlc();
+    }
+  }, [agentReady, vlcState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // React to the real result the agent sends back after pinging local VLC.
   useEffect(() => {
@@ -97,6 +110,22 @@ export default function Lobby({ me, setMe, onEnter, onTestVlc, onAutoSetup, onOp
           + Create a new room
         </button>
 
+        {recent.length > 0 && (
+          <div style={{ marginTop: 18 }}>
+            <Label>Recent rooms</Label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {recent.map((c) => (
+                <button key={c} disabled={!agentReady}
+                  onClick={() => onEnter({ create: false, code: c, vlcPassword: vlcPass, rejoin: true })}
+                  style={{ fontSize: 12, fontFamily: "var(--font-mono)", padding: "4px 10px", height: 28 }}>↻ {c}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <FriendsSection uid={uid} list={friendList} setList={setFriendList} disabled={!agentReady}
+          onWatch={(fid) => onEnter({ create: false, code: sharedRoomCode(uid, fid), vlcPassword: vlcPass, rejoin: true })} />
+
         <p style={{ fontSize: 11, color: "var(--text-muted)", textAlign: "center", marginTop: 14 }}>
           {agentReady ? (
             <Tooltip text="In VLC: Settings → Interface → enable Web (HTTP), set a password, paste it above.">
@@ -150,6 +179,55 @@ function VlcRow({ state, pass, setPass, onTest, onAutoSetup, error, disabled }) 
       {error && (
         <p style={{ fontSize: 11, color: "var(--text-danger, #e66)", margin: "8px 0 0" }}>{error}</p>
       )}
+    </div>
+  );
+}
+
+// Friends = saved people. Share your code once, add each other, then "Watch"
+// drops you both into the same room (a code both sides compute from the two ids).
+function FriendsSection({ uid, list, setList, onWatch, disabled }) {
+  const [fid, setFid] = useState("");
+  const [fname, setFname] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  function add() {
+    if (!fid.trim()) return;
+    setList(addFriend(fid, fname));
+    setFid(""); setFname("");
+  }
+
+  return (
+    <div style={{ marginTop: 20, borderTop: "0.5px solid var(--border)", paddingTop: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <Label>Friends</Label>
+        <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--text-muted)" }}>
+          your code:
+          <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-secondary)" }}>{uid}</span>
+          <button aria-label="Copy your friend code"
+            onClick={async () => { if (await copyText(uid)) { setCopied(true); setTimeout(() => setCopied(false), 1200); } }}
+            style={{ border: "none", background: "none", padding: 0, fontSize: 12, color: copied ? "var(--fill-success)" : "inherit" }}>
+            {copied ? "✓" : "⧉"}
+          </button>
+        </span>
+      </div>
+
+      {list.map((f) => (
+        <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <span style={{ flex: 1, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis" }}>{f.name}</span>
+          <button disabled={disabled} onClick={() => onWatch(f.id)}
+            style={{ fontSize: 12, padding: "4px 12px", height: 28 }}>Watch</button>
+          <button aria-label="Remove friend" onClick={() => setList(removeFriend(f.id))}
+            style={{ border: "none", background: "none", fontSize: 13, color: "var(--text-muted)" }}>✕</button>
+        </div>
+      ))}
+
+      <div style={{ display: "flex", gap: 8, marginTop: list.length ? 4 : 0 }}>
+        <input type="text" placeholder="Friend's code" value={fid} onChange={(e) => setFid(e.target.value.trim())}
+          style={{ flex: 1.3, fontSize: 12 }} />
+        <input type="text" placeholder="Name" value={fname} onChange={(e) => setFname(e.target.value)}
+          style={{ flex: 1, fontSize: 12 }} />
+        <button disabled={!fid.trim()} onClick={add} style={{ fontSize: 12, padding: "4px 10px", height: 30 }}>Add</button>
+      </div>
     </div>
   );
 }

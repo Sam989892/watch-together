@@ -10,4 +10,7 @@ services:
     buildCommand: npm install
     startCommand: node index.js
     healthCheckPath: /
+    # Auto-deploy so server fixes go live on push. A redeploy briefly restarts the
+    # server, but rooms now survive that: a reconnecting client recreates its room
+    # (see the join/rejoin handling), so an active watch party auto-recovers.
     autoDeploy: true

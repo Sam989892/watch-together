@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { connect, APP_VERSION } from "./lib/room.js";
+import { addRecentRoom } from "./lib/store.js";
 import { createVoice } from "./lib/voice.js";
 import Lobby from "./screens/Lobby.jsx";
 import Room from "./screens/Room.jsx";
@@ -46,7 +47,7 @@ export default function App() {
 
   function handle(msg) {
     switch (msg.type) {
-      case "joined": youId.current = msg.youId; setRoomCode(msg.code); setScreen("room"); break;
+      case "joined": youId.current = msg.youId; setRoomCode(msg.code); addRecentRoom(msg.code); setScreen("room"); break;
       case "roster": {
         setRoster(msg.members);
         // Flag a peer running a different app version (sync bugs come from this).
@@ -148,10 +149,11 @@ export default function App() {
     conn.current?.send({ type: "vlc-autosetup", vlcPassword });
   }
 
-  function enterRoom({ create, code, vlcPassword }) {
+  function enterRoom({ create, code, vlcPassword, rejoin }) {
     conn.current?.send({
       type: create ? "create" : "join",
       code,
+      rejoin, // recent-room / friend joins recreate the room if the server lost it
       name: me.name,
       avatar: me.avatar,
       vlcPassword,

@@ -8,8 +8,31 @@
 import { app, BrowserWindow, shell, session, ipcMain, clipboard, dialog, screen } from "electron";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
+import { appendFileSync, mkdirSync } from "node:fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// Tee console output + errors to a log file so a crash/hang can be diagnosed
+// after the fact. File lives at the app's logs path (Console.app > Reports, or
+// ~/Library/Logs/Watch Together/main.log on macOS).
+let LOG_FILE = null;
+function log(...args) {
+  const line = `[${new Date().toISOString()}] ${args.map(String).join(" ")}\n`;
+  try { if (LOG_FILE) appendFileSync(LOG_FILE, line); } catch {}
+}
+function setupLogging() {
+  try {
+    const dir = app.getPath("logs");
+    mkdirSync(dir, { recursive: true });
+    LOG_FILE = join(dir, "main.log");
+    for (const level of ["log", "warn", "error"]) {
+      const orig = console[level].bind(console);
+      console[level] = (...a) => { orig(...a); log(`[${level}]`, ...a); };
+    }
+    process.on("uncaughtException", (err) => log("[uncaught]", err?.stack || err));
+    process.on("unhandledRejection", (err) => log("[unhandledRejection]", err?.stack || err));
+  } catch {}
+}
 
 // A floating, click-through, always-on-top window that shows incoming chat over
 // whatever's playing (even VLC fullscreen), so you don't have to switch apps.
@@ -101,6 +124,13 @@ function createWindow() {
     return { action: "deny" };
   });
   win.webContents.on("did-fail-load", (_e, code, desc) => console.error("UI failed to load:", code, desc));
+  win.webContents.on("console-message", (_e, level, message) => { if (level >= 2) log("[renderer]", message); });
+  // If the renderer process dies, log why and rebuild the window instead of
+  // leaving a dead app.
+  win.webContents.on("render-process-gone", (_e, details) => {
+    console.error("renderer gone:", details.reason);
+    if (details.reason !== "clean-exit") createWindow();
+  });
   win.loadFile(CLIENT_INDEX);
   return win;
 }
@@ -124,7 +154,11 @@ ipcMain.on("overlay:notify", (_e, msg) => {
   overlayHideTimer = setTimeout(() => overlayWin?.hide(), 6000);
 });
 
+app.on("child-process-gone", (_e, details) => log("[child-process-gone]", details.type, details.reason));
+
 app.whenReady().then(async () => {
+  setupLogging();
+  log("app starting", app.getVersion());
   // Allow the mic (voice chat); deny other permission requests.
   session.defaultSession.setPermissionRequestHandler((_wc, permission, cb) => cb(permission === "media"));
 

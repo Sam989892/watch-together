@@ -74,7 +74,17 @@ wss.on("connection", (socket) => {
       }
       case "join": {
         room = rooms.get(norm(msg.code));
-        if (!room) return send({ type: "error", code: "no_room", message: "Room not found — check the code." });
+        if (!room) {
+          // A reconnecting client re-creates its room if the server restarted and
+          // lost it, so a watch party survives a server restart. A fresh join with
+          // a wrong code still gets "not found".
+          if (msg.rejoin && msg.code) {
+            room = new Room(msg.code);
+            rooms.set(norm(msg.code), room);
+          } else {
+            return send({ type: "error", code: "no_room", message: "Room not found — check the code." });
+          }
+        }
         joinRoom(msg);
         break;
       }

@@ -28,22 +28,25 @@
   </div>
   <script>
     const toast = document.getElementById("toast");
-    let hideT = null, lastBeep = 0;
+    let hideT = null, lastBeep = 0, audioCtx = null;
 
     // Short, soft beep. Rate-limited so a burst of messages doesn't spam it.
+    // Reuses one AudioContext — creating a new one per beep is unstable and
+    // browsers cap the total.
     function beep() {
       const now = Date.now();
       if (now - lastBeep < 2000) return;
       lastBeep = now;
       try {
-        const c = new AudioContext();
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        const c = audioCtx;
         const o = c.createOscillator(), g = c.createGain();
         o.frequency.value = 880; g.gain.value = 0.07;
         o.connect(g); g.connect(c.destination);
         o.start();
         g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.22);
         o.stop(c.currentTime + 0.24);
-        setTimeout(() => c.close(), 400);
       } catch {}
     }
 

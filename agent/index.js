@@ -100,6 +100,7 @@ wss.on("connection", (local) => {
         vlc, sendLocal, applying: false, scrubbing: false, pollTimer: null, upstream: null,
         last: snapshot(s),                                    // truthful poll baseline
         firstType: msg.type, code: msg.code, joinedOnce: false,
+        rejoin: !!msg.rejoin,                        // create the room if missing (recent room / friend)
         serverUrl: normalizeServer(msg.serverUrl),   // blank = host on this app's own server
         reportedFile: s ? s.file : null,             // last file name told to the server
         retries: 0, retryTimer: null, closed: false,
@@ -149,7 +150,9 @@ wss.on("connection", (local) => {
 
     ws.on("open", () => {
       const type = session.joinedOnce ? "join" : session.firstType;
-      ws.send(JSON.stringify({ type, code: session.code, ...session.join }));
+      // Recreate the room if it's gone (server restarted) rather than error out —
+      // on any reconnect, and on an initial recent-room / friend join.
+      ws.send(JSON.stringify({ type, code: session.code, rejoin: session.joinedOnce || session.rejoin, ...session.join }));
       session.retries = 0;
       if (!session.pollTimer) session.pollTimer = setInterval(() => pollVlc(session), 1000);
       // Keepalive: a tiny periodic message (ignored by the server) so a free
